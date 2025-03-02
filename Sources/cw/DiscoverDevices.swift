@@ -1,6 +1,6 @@
 import CoreAudio
 
-func listAudioDevices() {
+public func listAudioDevices() {
     var size: UInt32 = 0
     var address = AudioObjectPropertyAddress(
         mSelector: kAudioHardwarePropertyDevices,

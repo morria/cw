@@ -1,11 +1,11 @@
 import CoreAudio
 import AudioToolbox
 
-class AudioStreamer: NSObject {
+public class AudioStreamer: NSObject {
     var audioQueue: AudioQueueRef?
     var isStreaming = false
 
-    func startStreaming(deviceIndex: Int) {
+    public func startStreaming(deviceIndex: Int) {
         var size: UInt32 = 0
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDevices,
@@ -51,5 +51,6 @@ func audioQueueCallback(
     inPacketDescs: UnsafePointer<AudioStreamPacketDescription>?
 ) {
     // Handle audio buffer
+    print("Received audio buffer")
 }
 

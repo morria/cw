@@ -25,7 +25,10 @@ let package = Package(
         ),
         .testTarget(
             name: "cwTests",
-            dependencies: ["cw"]
+            dependencies: ["cw"],
+            resources: [
+                .copy("./samples")
+            ]
         ),
     ]
 )
