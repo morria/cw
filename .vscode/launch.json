@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:cw}",
+            "name": "Debug listen",
+            "program": "${workspaceFolder:cw}/.build/debug/listen",
+            "preLaunchTask": "swift: Build Debug listen"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:cw}",
+            "name": "Release listen",
+            "program": "${workspaceFolder:cw}/.build/release/listen",
+            "preLaunchTask": "swift: Build Release listen"
+        }
+    ]
+}
