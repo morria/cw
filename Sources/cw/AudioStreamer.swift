@@ -1,78 +1,78 @@
-import AVFoundation
+import Foundation
 
+/// A minimal abstraction representing a source of audio samples.
 public protocol AudioStreamSource {
+    /// Begin streaming floating point samples to the provided callback.
+    ///
+    /// - Parameter onSample: callback receiving a single normalized sample in the
+    ///   range `[-1, 1]`.
     func startStreaming(_ onSample: ((Float) -> Void)?) throws
+
+    /// Stop streaming samples.
     func stopStreaming()
 }
 
-public class FileStreamer: AudioStreamSource {
-    private var audioFile: AVAudioFile?
+/// Stream samples from an on–disk WAV file.  The entire file is loaded into
+/// memory and every sample is forwarded to the callback.
+public final class FileStreamer: AudioStreamSource {
     private let fileURL: URL
 
     public init(filePath: String) throws {
-        let url = URL(fileURLWithPath: filePath)
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            throw NSError(domain: "FileStreamer", code: 1, userInfo: [NSLocalizedDescriptionKey: "File not found"])
+        self.fileURL = URL(fileURLWithPath: filePath)
+        if !FileManager.default.fileExists(atPath: fileURL.path) {
+            throw NSError(domain: "FileStreamer", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "File not found"])
         }
-        self.fileURL = url
     }
 
     public func startStreaming(_ onSample: ((Float) -> Void)?) throws {
-        let file = try AVAudioFile(forReading: fileURL)
-        self.audioFile = file
-        let format = file.processingFormat
-        let frameCount = AVAudioFrameCount(file.length)
-
-        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else { return }
-        try file.read(into: buffer)
-        
-        processAudioBuffer(buffer, onSample)
-    }
-
-    private func processAudioBuffer(_ buffer: AVAudioPCMBuffer, _ onSample: ((Float) -> Void)?) {
-        let frameLength = Int(buffer.frameLength)
-        guard let floatChannelData = buffer.floatChannelData else { return }
-
-        for i in 0..<frameLength {
-            let sample = floatChannelData.pointee[i]
+        let wav = try WAVFile(url: fileURL)
+        for sample in wav.samples {
             onSample?(sample)
         }
     }
 
     public func stopStreaming() {
-        audioFile = nil
+        // Nothing to clean up for file based streaming
     }
 }
 
-#if os(macOS)
-public class MacOSDeviceStreamer: AudioStreamSource {
+#if canImport(AVFoundation) && os(macOS)
+import AVFoundation
+
+/// Stream audio from a macOS audio input device.
+public final class MacOSDeviceStreamer: AudioStreamSource {
     private let deviceID: String
     private var audioEngine: AVAudioEngine?
-    
+
     public init(deviceID: String) {
         self.deviceID = deviceID
     }
-    
+
     public func startStreaming(_ onSample: ((Float) -> Void)?) throws {
         let engine = AVAudioEngine()
         let inputNode = engine.inputNode
-        
-        guard let inputFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 44100, channels: 1, interleaved: false) else {
-            throw NSError(domain: "MacOSDeviceStreamer", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create audio format"])
+
+        guard let format = AVAudioFormat(commonFormat: .pcmFormatFloat32,
+                                         sampleRate: 44100,
+                                         channels: 1,
+                                         interleaved: false) else {
+            throw NSError(domain: "MacOSDeviceStreamer", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Failed to create audio format"])
         }
-        
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { buffer, _ in
-            let floatData = buffer.floatChannelData?[0]
+
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
             let frameCount = Int(buffer.frameLength)
+            guard let data = buffer.floatChannelData?[0] else { return }
             for i in 0..<frameCount {
-                onSample?(floatData?[i] ?? 0.0)
+                onSample?(data[i])
             }
         }
-        
+
         try engine.start()
-        self.audioEngine = engine
+        audioEngine = engine
     }
-    
+
     public func stopStreaming() {
         audioEngine?.stop()
         audioEngine?.inputNode.removeTap(onBus: 0)
@@ -80,3 +80,4 @@ public class MacOSDeviceStreamer: AudioStreamSource {
     }
 }
 #endif
+

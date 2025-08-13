@@ -2,24 +2,14 @@ import Testing
 import Foundation
 @testable import cw
 
-@Test func testAnalyzeSamples() throws {
-    let fileManager = FileManager.default
-    let samplesDirectory = "./Tests/samples"
-
-    do {
-        let files = try fileManager.contentsOfDirectory(atPath: samplesDirectory)
-        for file in files {
-            print("Found file: \(file)")
-
-            let queue = DispatchQueue(label: "com.example.audioStreamerTest")
-            queue.async {
-                let audio = AudioStreamer()
-                audio.startStreamingFile(fromPath: "\(samplesDirectory)/\(file)")
-                RunLoop.current.run()
-            }
-            break
-        }
-    } catch {
-        #expect(Bool(false), "Failed to list files in directory: \(error)")
-    }
+/// Verify that the decoder can recover the expected text from one of the
+/// bundled sample recordings.
+@Test func testDecodeSample() throws {
+    let decoder = CWDecoder()
+    let url = Bundle.module.url(forResource: "sample_12_600_10_CQ_CQ_CQ_DE_W2ASM_K",
+                                withExtension: "wav",
+                                subdirectory: "samples")!
+    let text = try decoder.decodeWAVFile(atPath: url.path)
+    #expect(text == "CQ CQ CQ DE W2ASM K")
 }
+
