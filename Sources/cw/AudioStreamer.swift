@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(AVFoundation)
+import AVFoundation
+#endif
 
 /// A minimal abstraction representing a source of audio samples.
 public protocol AudioStreamSource {
@@ -42,7 +45,6 @@ public final class FileStreamer: AudioStreamSource {
 }
 
 #if canImport(AVFoundation) && os(macOS)
-import AVFoundation
 
 /// Stream audio from a macOS audio input device.
 public final class MacOSDeviceStreamer: AudioStreamSource {
@@ -88,4 +90,6 @@ public final class MacOSDeviceStreamer: AudioStreamSource {
         audioEngine = nil
     }
 }
+
 #endif
+
