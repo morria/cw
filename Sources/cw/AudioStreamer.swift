@@ -12,17 +12,21 @@ public protocol AudioStreamSource {
     func stopStreaming()
 }
 
-/// Stream samples from an on–disk WAV file.  The entire file is loaded into
+/// Stream samples from an on–disk WAV file. The entire file is loaded into
 /// memory and every sample is forwarded to the callback.
 public final class FileStreamer: AudioStreamSource {
     private let fileURL: URL
 
     public init(filePath: String) throws {
-        self.fileURL = URL(fileURLWithPath: filePath)
-        if !FileManager.default.fileExists(atPath: fileURL.path) {
-            throw NSError(domain: "FileStreamer", code: 1,
-                          userInfo: [NSLocalizedDescriptionKey: "File not found"])
+        let url = URL(fileURLWithPath: filePath)
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw NSError(
+                domain: "FileStreamer",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "File not found"]
+            )
         }
+        self.fileURL = url
     }
 
     public func startStreaming(_ onSample: ((Float) -> Void)?) throws {
@@ -53,12 +57,17 @@ public final class MacOSDeviceStreamer: AudioStreamSource {
         let engine = AVAudioEngine()
         let inputNode = engine.inputNode
 
-        guard let format = AVAudioFormat(commonFormat: .pcmFormatFloat32,
-                                         sampleRate: 44100,
-                                         channels: 1,
-                                         interleaved: false) else {
-            throw NSError(domain: "MacOSDeviceStreamer", code: -1,
-                          userInfo: [NSLocalizedDescriptionKey: "Failed to create audio format"])
+        guard let format = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 44100,
+            channels: 1,
+            interleaved: false
+        ) else {
+            throw NSError(
+                domain: "MacOSDeviceStreamer",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to create audio format"]
+            )
         }
 
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
@@ -80,4 +89,3 @@ public final class MacOSDeviceStreamer: AudioStreamSource {
     }
 }
 #endif
-

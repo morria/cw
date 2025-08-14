@@ -1,9 +1,6 @@
 import Foundation
 
-/// Print a list of available input audio devices.  The real implementation is
-/// only available on macOS where CoreAudio can be used.  On other platforms this
-/// function simply informs the user that the operation is unsupported.
-#if os(macOS)
+#if canImport(CoreAudio)
 import CoreAudio
 
 public func listAudioDevices() {
@@ -31,12 +28,8 @@ public func listAudioDevices() {
         print("Device \(index): \(deviceName)")
     }
 }
-
 #else
-
 public func listAudioDevices() {
-    print("Audio device listing is not supported on this platform")
+    print("Audio device listing is not supported on this platform.")
 }
-
 #endif
-
