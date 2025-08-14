@@ -1,3 +1,6 @@
+import Foundation
+
+#if canImport(CoreAudio)
 import CoreAudio
 
 public func listAudioDevices() {
@@ -11,7 +14,7 @@ public func listAudioDevices() {
     let deviceCount = Int(size) / MemoryLayout<AudioDeviceID>.size
     var devices = [AudioDeviceID](repeating: 0, count: deviceCount)
     AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &devices)
-    
+
     for (index, device) in devices.enumerated() {
         var name: CFString = "" as CFString
         var nameSize = UInt32(MemoryLayout<CFString>.size)
@@ -25,4 +28,8 @@ public func listAudioDevices() {
         print("Device \(index): \(deviceName)")
     }
 }
-
+#else
+public func listAudioDevices() {
+    print("Audio device listing is not supported on this platform.")
+}
+#endif
