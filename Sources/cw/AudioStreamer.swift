@@ -1,3 +1,6 @@
+import Foundation
+
+#if canImport(AVFoundation)
 import AVFoundation
 
 public protocol AudioStreamSource {
@@ -12,7 +15,11 @@ public class FileStreamer: AudioStreamSource {
     public init(filePath: String) throws {
         let url = URL(fileURLWithPath: filePath)
         guard FileManager.default.fileExists(atPath: url.path) else {
-            throw NSError(domain: "FileStreamer", code: 1, userInfo: [NSLocalizedDescriptionKey: "File not found"])
+            throw NSError(
+                domain: "FileStreamer",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "File not found"]
+            )
         }
         self.fileURL = url
     }
@@ -25,7 +32,7 @@ public class FileStreamer: AudioStreamSource {
 
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else { return }
         try file.read(into: buffer)
-        
+
         processAudioBuffer(buffer, onSample)
     }
 
@@ -48,19 +55,23 @@ public class FileStreamer: AudioStreamSource {
 public class MacOSDeviceStreamer: AudioStreamSource {
     private let deviceID: String
     private var audioEngine: AVAudioEngine?
-    
+
     public init(deviceID: String) {
         self.deviceID = deviceID
     }
-    
+
     public func startStreaming(_ onSample: ((Float) -> Void)?) throws {
         let engine = AVAudioEngine()
         let inputNode = engine.inputNode
-        
+
         guard let inputFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 44100, channels: 1, interleaved: false) else {
-            throw NSError(domain: "MacOSDeviceStreamer", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create audio format"])
+            throw NSError(
+                domain: "MacOSDeviceStreamer",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to create audio format"]
+            )
         }
-        
+
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { buffer, _ in
             let floatData = buffer.floatChannelData?[0]
             let frameCount = Int(buffer.frameLength)
@@ -68,15 +79,35 @@ public class MacOSDeviceStreamer: AudioStreamSource {
                 onSample?(floatData?[i] ?? 0.0)
             }
         }
-        
+
         try engine.start()
         self.audioEngine = engine
     }
-    
+
     public func stopStreaming() {
         audioEngine?.stop()
         audioEngine?.inputNode.removeTap(onBus: 0)
         audioEngine = nil
     }
+}
+#endif
+
+#else
+public protocol AudioStreamSource {
+    func startStreaming(_ onSample: ((Float) -> Void)?) throws
+    func stopStreaming()
+}
+
+public class FileStreamer: AudioStreamSource {
+    public init(filePath: String) throws {
+        throw NSError(
+            domain: "FileStreamer",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "AVFoundation unavailable on this platform"]
+        )
+    }
+
+    public func startStreaming(_ onSample: ((Float) -> Void)?) throws {}
+    public func stopStreaming() {}
 }
 #endif

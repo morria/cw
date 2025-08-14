@@ -1,25 +1,17 @@
+#if canImport(AVFoundation)
 import Testing
 import Foundation
 @testable import cw
 
 @Test func testAnalyzeSamples() throws {
-    let fileManager = FileManager.default
     let samplesDirectory = "./Tests/samples"
-
-    do {
-        let files = try fileManager.contentsOfDirectory(atPath: samplesDirectory)
-        for file in files {
-            print("Found file: \(file)")
-
-            let queue = DispatchQueue(label: "com.example.audioStreamerTest")
-            queue.async {
-                let audio = AudioStreamer()
-                audio.startStreamingFile(fromPath: "\(samplesDirectory)/\(file)")
-                RunLoop.current.run()
-            }
-            break
-        }
-    } catch {
-        #expect(Bool(false), "Failed to list files in directory: \(error)")
+    let files = try FileManager.default.contentsOfDirectory(atPath: samplesDirectory)
+    guard let file = files.first else {
+        #expect(Bool(false), "No sample files found")
+        return
     }
+    let streamer = try FileStreamer(filePath: "\(samplesDirectory)/\(file)")
+    try streamer.startStreaming { _ in }
+    streamer.stopStreaming()
 }
+#endif
