@@ -13,9 +13,10 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: swift-actions/setup-swift@v2
-      with:
-        swift-version: '6.1'
+    # Use the Xcode-bundled Swift; installing a separate open-source
+    # toolchain breaks against newer SDKs on the hosted runners.
+    - name: Swift version
+      run: swift --version
     - name: Build
       run: swift build --build-tests
     - name: Test
