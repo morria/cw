@@ -29,12 +29,18 @@ private struct SampleFixture {
 }
 
 private func allSampleFixtures() throws -> [SampleFixture] {
-    let urls = try #require(
-        Bundle.module.urls(forResourcesWithExtension: "wav", subdirectory: "samples"),
+    // FileManager instead of Bundle.urls(forResourcesWithExtension:) because
+    // the latter returns [NSURL]? on Linux's corelibs-foundation.
+    let samplesURL = try #require(
+        Bundle.module.resourceURL?.appendingPathComponent("samples"),
         "samples resource directory missing"
     )
-    let fixtures = urls.compactMap(SampleFixture.init)
-    #expect(fixtures.count == urls.count, "some sample filenames failed to parse")
+    let contents = try FileManager.default.contentsOfDirectory(
+        at: samplesURL, includingPropertiesForKeys: nil
+    )
+    let wavs = contents.filter { $0.pathExtension == "wav" }
+    let fixtures = wavs.compactMap(SampleFixture.init)
+    #expect(fixtures.count == wavs.count, "some sample filenames failed to parse")
     try #require(!fixtures.isEmpty, "no sample WAV files found")
     return fixtures.sorted { $0.url.lastPathComponent < $1.url.lastPathComponent }
 }
