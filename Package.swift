@@ -5,6 +5,9 @@ import PackageDescription
 
 let package = Package(
     name: "cw",
+    platforms: [
+        .macOS(.v12)
+    ],
     products: [
         .library(
             name: "cw",
